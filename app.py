@@ -3,7 +3,6 @@ from fpdf import FPDF
 import datetime
 from io import BytesIO
 import num2words  # Biblioteca para converter números em texto
-# import locale  # Para manipulação de data em português
 import requests  # Para baixar imagens de URLs
 import tempfile  # Para criar arquivos temporários
 import os
@@ -35,7 +34,6 @@ def data_atual_em_texto():
     data_formatada = data_e_hora_atuais.strftime('%d de %B de %Y')
     # Capitalizando a primeira letra do mês:
     mes = data_formatada.split('de')[1].strip()
-    print(mes)
     data_formatada = data_formatada.replace(mes, meses[mes])
     return data_formatada
 
@@ -140,18 +138,34 @@ valor = st.number_input('Valor Total (R$)', min_value=0.0, step=0.01)
 logo_url = 'https://raw.githubusercontent.com/jsaj/recibo/main/images/LOGO_Veronica.png'
 assinatura_url = 'https://raw.githubusercontent.com/jsaj/recibo/main/images/ass_veronica.png'
 
-if st.button('Gerar PDF'):
+if st.button('Gerar e Salvar PDF'):
     pdf_bytes = generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url)
-
+    
     nome_cliente_saida = nome_cliente.lower().split(" ")
     if len(nome_cliente_saida) > 1:
         nome_cliente_saida = "_".join(nome_cliente_saida)
     else:
         nome_cliente_saida = nome_cliente_saida[0]
+        
+    with st.spinner('Gerando PDF...'):
+        st.file_saver(
+            pdf_bytes,
+            file_name=f"recibo_{nome_cliente_saida}.pdf",
+            mime="application/pdf"
+        )
 
-    st.download_button(
-        label="Baixar PDF",
-        data=pdf_bytes,
-        file_name=f"recibo_{nome_cliente_saida}.pdf",
-        mime="application/pdf"
-    )
+# if st.button('Gerar PDF'):
+#     pdf_bytes = generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url)
+
+#     nome_cliente_saida = nome_cliente.lower().split(" ")
+#     if len(nome_cliente_saida) > 1:
+#         nome_cliente_saida = "_".join(nome_cliente_saida)
+#     else:
+#         nome_cliente_saida = nome_cliente_saida[0]
+
+#     st.download_button(
+#         label="Baixar PDF",
+#         data=pdf_bytes,
+#         file_name=f"recibo_{nome_cliente_saida}.pdf",
+#         mime="application/pdf"
+#     )
