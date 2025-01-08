@@ -44,7 +44,7 @@ def generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url):
     pdf.add_page()
 
     # Adicionar logo centralizada no topo
-    pdf.image(logo_path, x=85, y=30, w=35)
+    pdf.image(logo_path, x=87.5, y=30, w=35)
 
     # Adicionar título "RECIBO DE PAGAMENTO"
     pdf.set_font('Times', 'B', 18)
@@ -56,10 +56,24 @@ def generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url):
     pdf.ln(25)  # 5 células (5 x 2mm = 10mm)
     valor_extenso = num2words.num2words(valor, lang='pt_BR', to='currency')
     quantidade_extenso = num2words.num2words(quantidade, lang='pt_BR')
+    
+    # Formatar o valor no padrão brasileiro (R$ 250,00)
+
+    if valor < 1000:
+        valor_corrigido = f"{valor:,.2f}".replace('.', ',')
+    else:
+        valor_corrigido = f"{valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
+    
+    if quantidade < 1000:
+        quantidade_corrigido = quantidade
+    else:
+        quantidade_corrigido = f"{quantidade:,.2f}"
+        quantidade_corrigido = quantidade_corrigido.split('.')[0].replace(',', '.')
+         
     texto_recibo = (
         f"Eu, Maria Verônica Gomes Pereira Avelino, CPF: 047.589.934-24, recebi do(a) {nome_cliente} "
-        f"o valor de R$ {valor:.2f} ({valor_extenso}), referente ao fornecimento de "
-        f"{quantidade} ({quantidade_extenso}) salgados."
+        f"o valor de R$ {valor_corrigido} ({valor_extenso}), referente ao fornecimento de "
+        f"{quantidade_corrigido} ({quantidade_extenso}) salgados."
     )
 
     # Configurar espaçamento entre linhas e margens para o texto descritivo
@@ -95,6 +109,7 @@ nome_cliente = st.text_input('Nome do Cliente')
 quantidade = st.number_input('Quantidade de Itens', min_value=1, step=1)
 valor = st.number_input('Valor Total (R$)', min_value=0.0, step=0.01)
 
+# URLs das imagens
 logo_url = 'https://raw.githubusercontent.com/jsaj/recibo/main/images/LOGO_Veronica.png'
 assinatura_url = 'https://raw.githubusercontent.com/jsaj/recibo/main/images/ass_veronica.png'
 
