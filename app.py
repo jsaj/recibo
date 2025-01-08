@@ -138,23 +138,7 @@ valor = st.number_input('Valor Total (R$)', min_value=0.0, step=0.01)
 logo_url = 'https://raw.githubusercontent.com/jsaj/recibo/main/images/LOGO_Veronica.png'
 assinatura_url = 'https://raw.githubusercontent.com/jsaj/recibo/main/images/ass_veronica.png'
 
-if st.button('Gerar e Salvar PDF'):
-    pdf_bytes = generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url)
-    
-    nome_cliente_saida = nome_cliente.lower().split(" ")
-    if len(nome_cliente_saida) > 1:
-        nome_cliente_saida = "_".join(nome_cliente_saida)
-    else:
-        nome_cliente_saida = nome_cliente_saida[0]
-        
-    with st.spinner('Gerando PDF...'):
-        st.file_saver(
-            pdf_bytes,
-            file_name=f"recibo_{nome_cliente_saida}.pdf",
-            mime="application/pdf"
-        )
-
-if st.button('Gerar PDF'):
+if st.button('Gerar recibo'):
     pdf_bytes = generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url)
 
     nome_cliente_saida = nome_cliente.lower().split(" ")
@@ -164,7 +148,7 @@ if st.button('Gerar PDF'):
         nome_cliente_saida = nome_cliente_saida[0]
 
     st.download_button(
-        label="Baixar PDF",
+        label="Baixar recibo",
         data=pdf_bytes,
         file_name=f"recibo_{nome_cliente_saida}.pdf",
         mime="application/pdf"
