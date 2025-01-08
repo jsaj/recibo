@@ -1,3 +1,4 @@
 streamlit~=1.41.1
 fpdf~=1.7.2
 num2words~=0.5.14
+googletrans~=4.0.2

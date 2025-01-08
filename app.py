@@ -8,6 +8,7 @@ import requests  # Para baixar imagens de URLs
 import tempfile  # Para criar arquivos temporários
 import os
 from datetime import datetime
+from googletrans import Translator
 
 class CustomPDF(FPDF):
     def header(self):
@@ -16,15 +17,29 @@ class CustomPDF(FPDF):
 def data_atual_em_texto():
   """Retorna a data atual formatada para o padrão brasileiro, com a primeira letra do mês em maiúscula."""
 
-  os.environ['LC_ALL'] = 'pt_BR.UTF-8'
   data_e_hora_atuais = datetime.now()
   data_formatada = data_e_hora_atuais.strftime('%d de %B de %Y')
   # Capitalizando a primeira letra do mês:
   mes = data_formatada.split('de')[1]
-  mes_capitalizado = mes.title()
+  mes_capitalizado = traduzir(mes.title())
+  
   data_formatada = data_formatada.replace(mes, mes_capitalizado)
   return data_formatada
 
+def traduzir(texto, destino='pt'):
+  """Traduz um texto para o idioma de destino.
+
+  Args:
+    texto: O texto a ser traduzido.
+    destino: O código do idioma de destino (por padrão, 'pt' para português).
+
+  Returns:
+    O texto traduzido.
+  """
+
+  translator = Translator()
+  traducao = translator.translate(texto, dest=destino)
+  return traducao.text
 
 def download_image(url):
     # Baixar a imagem e retornar o arquivo em formato de bytes
