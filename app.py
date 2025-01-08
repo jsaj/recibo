@@ -67,8 +67,8 @@ quantidade = st.number_input('Quantidade de Itens', min_value=1, step=1)
 valor = st.number_input('Valor Total (R$)', min_value=0.0, step=0.01)
 
 # Caminho dos arquivos (substitua pelos seus caminhos reais)
-logo_path = r'C:\Users\Jjr_a\PycharmProjects\app-recibo\.venv\src\images\LOGO Veronica.png'
-assinatura_path = r'C:\Users\Jjr_a\PycharmProjects\app-recibo\.venv\src\images\ass_veronica.png'
+logo_path = 'https://github.com/jsaj/recibo/blob/main/images/LOGO%20Veronica.png'
+assinatura_path = 'https://github.com/jsaj/recibo/blob/main/images/ass_veronica.png'
 
 if st.button('Gerar PDF'):
     pdf_bytes = generate_pdf(nome_cliente, quantidade, valor, logo_path, assinatura_path)
