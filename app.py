@@ -3,43 +3,41 @@ from fpdf import FPDF
 import datetime
 from io import BytesIO
 import num2words  # Biblioteca para converter números em texto
-import locale  # Para manipulação de data em português
+# import locale  # Para manipulação de data em português
 import requests  # Para baixar imagens de URLs
 import tempfile  # Para criar arquivos temporários
 import os
 from datetime import datetime
-from googletrans import Translator
 
 class CustomPDF(FPDF):
     def header(self):
         pass  # Remover o cabeçalho automático
 
 def data_atual_em_texto():
-  """Retorna a data atual formatada para o padrão brasileiro, com a primeira letra do mês em maiúscula."""
+    """Retorna a data atual formatada para o padrão brasileiro, com a primeira letra do mês em maiúscula."""
 
-  data_e_hora_atuais = datetime.now()
-  data_formatada = data_e_hora_atuais.strftime('%d de %B de %Y')
-  # Capitalizando a primeira letra do mês:
-  mes = data_formatada.split('de')[1]
-#   mes_capitalizado = traduzir(mes.title())
-  
-  data_formatada = data_formatada.replace(mes, traduzir(mes).capitalize())
-  return data_formatada
+    # Dicionário de meses em inglês e português
+    meses = {
+        'January': 'Janeiro',
+        'February': 'Fevereiro',
+        'March': 'Março',
+        'April': 'Abril',
+        'May': 'Maio',
+        'June': 'Junho',
+        'July': 'Julho',
+        'August': 'Agosto',
+        'September': 'Setembro',
+        'October': 'Outubro',
+        'November': 'Novembro',
+        'December': 'Dezembro'
+    }
+    data_e_hora_atuais = datetime.now()
+    data_formatada = data_e_hora_atuais.strftime('%d de %B de %Y')
+    # Capitalizando a primeira letra do mês:
+    mes = data_formatada.split('de')[1]
 
-def traduzir(texto, destino='pt'):
-  """Traduz um texto para o idioma de destino.
-
-  Args:
-    texto: O texto a ser traduzido.
-    destino: O código do idioma de destino (por padrão, 'pt' para português).
-
-  Returns:
-    O texto traduzido.
-  """
-
-  translator = Translator()
-  traducao = translator.translate(texto, dest=destino)
-  return traducao.text
+    data_formatada = data_formatada.replace(mes, meses[mes])
+    return data_formatada
 
 def download_image(url):
     # Baixar a imagem e retornar o arquivo em formato de bytes
