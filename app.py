@@ -7,10 +7,22 @@ import locale  # Para manipulação de data em português
 import requests  # Para baixar imagens de URLs
 import tempfile  # Para criar arquivos temporários
 import os
+from datetime import datetime
 
 class CustomPDF(FPDF):
     def header(self):
         pass  # Remover o cabeçalho automático
+
+def data_atual_em_texto():
+  """Retorna a data atual formatada para o padrão brasileiro, com a primeira letra do mês em maiúscula."""
+  data_e_hora_atuais = datetime.now()
+  data_formatada = data_e_hora_atuais.strftime('%d de %B de %Y')
+  # Capitalizando a primeira letra do mês:
+  mes = data_formatada.split('de')[1]
+  mes_capitalizado = mes.title()
+  data_formatada = data_formatada.replace(mes, mes_capitalizado)
+  return data_formatada
+
 
 def download_image(url):
     # Baixar a imagem e retornar o arquivo em formato de bytes
@@ -83,9 +95,10 @@ def generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url):
     # Adicionar cidade e data
 
     pdf.ln(40)
-    data_atual = datetime.datetime.now().strftime('%d de %B de %Y')
-    data_atual = data_atual.capitalize()  # Primeira letra do mês em maiúscula
-    pdf.cell(0, 10, f"Lajes/RN, {data_atual}", ln=True, align='C')
+    # data_atual = datetime.datetime.now().strftime('%d de %B de %Y')
+    # data_atual = data_atual.capitalize()  # Primeira letra do mês em maiúscula
+    data_hoje = data_atual_em_texto()
+    pdf.cell(0, 10, f"Lajes/RN, {data_hoje}", ln=True, align='C')
 
     # Adicionar assinatura digital
     pdf.ln(50)  # Ajustar espaço antes da assinatura
