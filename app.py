@@ -15,6 +15,7 @@ class CustomPDF(FPDF):
 
 def data_atual_em_texto():
   """Retorna a data atual formatada para o padrão brasileiro, com a primeira letra do mês em maiúscula."""
+  locale.setlocale(locale.LC_TIME, 'pt_BR.utf8')
   data_e_hora_atuais = datetime.now()
   data_formatada = data_e_hora_atuais.strftime('%d de %B de %Y')
   # Capitalizando a primeira letra do mês:
@@ -31,10 +32,6 @@ def download_image(url):
 
 def generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url):
     pdf = CustomPDF()
-    try:
-        locale.setlocale(locale.LC_TIME, 'pt_BR.utf8')
-    except locale.Error:
-        locale.setlocale(locale.LC_TIME, '') 
 
     # Baixar as imagens
     logo_image = download_image(logo_url)
