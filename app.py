@@ -20,7 +20,7 @@ def download_image(url):
 def generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url):
     pdf = CustomPDF()
     try:
-        locale.setlocale(locale.LC_TIME, 'pt_BR.utf8')
+        locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
     except locale.Error:
         locale.setlocale(locale.LC_TIME, '') 
 
@@ -52,7 +52,7 @@ def generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url):
     pdf.cell(0, 10, 'RECIBO DE PAGAMENTO', ln=True, align='C')
 
     # Adicionar texto principal do recibo com valores por extenso
-    pdf.set_font('Times', '', 12)  # Fonte Times New Roman
+    pdf.set_font('Times', '', 11)  # Fonte Times New Roman
     pdf.ln(25)  # 5 células (5 x 2mm = 10mm)
     valor_extenso = num2words.num2words(valor, lang='pt_BR', to='currency')
     quantidade_extenso = num2words.num2words(quantidade, lang='pt_BR')
@@ -77,11 +77,14 @@ def generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url):
     )
 
     # Configurar espaçamento entre linhas e margens para o texto descritivo
-    pdf.multi_cell(0, 8, texto_recibo, align='J')  # Justificado com espaçamento ajustado
+    pdf.multi_cell(0, 5, texto_recibo, align='J')  # Justificado com espaçamento ajustado
+
 
     # Adicionar cidade e data
+
     pdf.ln(40)
     data_atual = datetime.datetime.now().strftime('%d de %B de %Y')
+    data_atual = data_atual.capitalize()  # Primeira letra do mês em maiúscula
     pdf.cell(0, 10, f"Lajes/RN, {data_atual}", ln=True, align='C')
 
     # Adicionar assinatura digital
