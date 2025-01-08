@@ -21,9 +21,9 @@ def data_atual_em_texto():
   data_formatada = data_e_hora_atuais.strftime('%d de %B de %Y')
   # Capitalizando a primeira letra do mês:
   mes = data_formatada.split('de')[1]
-  mes_capitalizado = traduzir(mes.title())
+#   mes_capitalizado = traduzir(mes.title())
   
-  data_formatada = data_formatada.replace(mes, mes_capitalizado)
+  data_formatada = data_formatada.replace(mes, traduzir(mes).capitalize())
   return data_formatada
 
 def traduzir(texto, destino='pt'):
