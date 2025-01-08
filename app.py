@@ -15,7 +15,8 @@ class CustomPDF(FPDF):
 
 def data_atual_em_texto():
   """Retorna a data atual formatada para o padrão brasileiro, com a primeira letra do mês em maiúscula."""
-  locale.setlocale(locale.LC_TIME, 'pt_BR.utf8')
+
+  os.environ['LC_ALL'] = 'pt_BR.UTF-8'
   data_e_hora_atuais = datetime.now()
   data_formatada = data_e_hora_atuais.strftime('%d de %B de %Y')
   # Capitalizando a primeira letra do mês:
