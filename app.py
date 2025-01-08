@@ -34,8 +34,8 @@ def data_atual_em_texto():
     data_e_hora_atuais = datetime.now()
     data_formatada = data_e_hora_atuais.strftime('%d de %B de %Y')
     # Capitalizando a primeira letra do mês:
-    mes = data_formatada.split('de')[1]
-
+    mes = data_formatada.split('de')[1].strip()
+    print(mes)
     data_formatada = data_formatada.replace(mes, meses[mes])
     return data_formatada
 
