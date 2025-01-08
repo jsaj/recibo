@@ -154,18 +154,18 @@ if st.button('Gerar e Salvar PDF'):
             mime="application/pdf"
         )
 
-# if st.button('Gerar PDF'):
-#     pdf_bytes = generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url)
+if st.button('Gerar PDF'):
+    pdf_bytes = generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url)
 
-#     nome_cliente_saida = nome_cliente.lower().split(" ")
-#     if len(nome_cliente_saida) > 1:
-#         nome_cliente_saida = "_".join(nome_cliente_saida)
-#     else:
-#         nome_cliente_saida = nome_cliente_saida[0]
+    nome_cliente_saida = nome_cliente.lower().split(" ")
+    if len(nome_cliente_saida) > 1:
+        nome_cliente_saida = "_".join(nome_cliente_saida)
+    else:
+        nome_cliente_saida = nome_cliente_saida[0]
 
-#     st.download_button(
-#         label="Baixar PDF",
-#         data=pdf_bytes,
-#         file_name=f"recibo_{nome_cliente_saida}.pdf",
-#         mime="application/pdf"
-#     )
+    st.download_button(
+        label="Baixar PDF",
+        data=pdf_bytes,
+        file_name=f"recibo_{nome_cliente_saida}.pdf",
+        mime="application/pdf"
+    )
