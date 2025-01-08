@@ -19,7 +19,10 @@ def download_image(url):
 
 def generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url):
     pdf = CustomPDF()
-    locale.setlocale(locale.LC_TIME, 'pt_BR.utf8')
+    try:
+        locale.setlocale(locale.LC_TIME, 'pt_BR.utf8')
+    except locale.Error:
+        locale.setlocale(locale.LC_TIME, '') 
 
     # Baixar as imagens
     logo_image = download_image(logo_url)
