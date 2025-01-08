@@ -127,7 +127,10 @@ def generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url):
 
     return BytesIO(pdf_bytes)
 
-# Interface do Streamlit
+# Inicializar a variável de estado
+if 'recibo_gerado' not in st.session_state:
+    st.session_state['recibo_gerado'] = False
+
 st.title('Gerador de Recibo')
 
 nome_cliente = st.text_input('Nome do Cliente')
@@ -138,18 +141,22 @@ valor = st.number_input('Valor Total (R$)', min_value=0.0, step=0.01)
 logo_url = 'https://raw.githubusercontent.com/jsaj/recibo/main/images/LOGO_Veronica.png'
 assinatura_url = 'https://raw.githubusercontent.com/jsaj/recibo/main/images/ass_veronica.png'
 
-if st.button('Gerar recibo'):
-    pdf_bytes = generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url)
+if not st.session_state['recibo_gerado']:
+    if st.button('Gerar recibo'):
+        # Gerar o PDF
+        pdf_bytes = generate_pdf(nome_cliente, quantidade, valor, logo_url, assinatura_url)
 
-    nome_cliente_saida = nome_cliente.lower().split(" ")
-    if len(nome_cliente_saida) > 1:
-        nome_cliente_saida = "_".join(nome_cliente_saida)
-    else:
-        nome_cliente_saida = nome_cliente_saida[0]
+        # Salvar o PDF em session_state
+        st.session_state['pdf_bytes'] = pdf_bytes
+        st.session_state['nome_cliente_saida'] = "_".join(nome_cliente.lower().split())
+        st.session_state['recibo_gerado'] = True
+        st.experimental_rerun()  # Recarregar a página para atualizar o estado
 
+# Exibir botão de download apenas após a geração do recibo
+if st.session_state['recibo_gerado']:
     st.download_button(
         label="Baixar recibo",
-        data=pdf_bytes,
-        file_name=f"recibo_{nome_cliente_saida}.pdf",
+        data=st.session_state['pdf_bytes'],
+        file_name=f"recibo_{st.session_state['nome_cliente_saida']}.pdf",
         mime="application/pdf"
     )
