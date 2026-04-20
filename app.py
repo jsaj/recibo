@@ -111,7 +111,7 @@ quantidade = st.number_input('Quantidade de Itens', min_value=1, step=1)
 valor = st.number_input('Valor Total (R$)', min_value=0.0, step=0.01)
 
 # Caminhos locais das imagens
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(__file__)
 
 logo_path = os.path.join(BASE_DIR, "images", "logo.png")
 assinatura_path = os.path.join(BASE_DIR, "images", "assinatura.png")
