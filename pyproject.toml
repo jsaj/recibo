@@ -8,7 +8,17 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "streamlit (>=1.56.0,<2.0.0)"
+    "streamlit (>=1.56.0,<2.0.0)",
+    "pydub (>=0.25.1,<0.26.0)",
+    "streamlit-mic-recorder (>=0.0.8,<0.0.9)",
+    "speechrecognition (>=3.16.0,<4.0.0)",
+    "soundfile (>=0.13.1,<0.14.0)",
+    "numpy (>=2.4.4,<3.0.0)",
+    "num2words (>=0.5.14,<0.6.0)",
+    "fpdf (>=1.7.2,<2.0.0)",
+    "faster-whisper (>=1.2.1,<2.0.0)",
+    "audio-recorder-streamlit (>=0.0.10,<0.0.11)",
+    "pyyaml (>=6.0.3,<7.0.0)"
 ]
 
 [tool.poetry]
