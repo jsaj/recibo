@@ -1,7 +1,6 @@
 streamlit
-audio-recorder-streamlit
-pydub
 fpdf
-fpdf~=1.7.2
-num2words~=0.5.14
-googletrans~=4.0.2
+num2words
+faster-whisper
+requests
+PyYAML
