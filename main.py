@@ -4,21 +4,18 @@ from io import BytesIO
 import num2words
 import os
 from datetime import datetime
-import tempfile
 import json
 import requests
-import re
 import yaml
-from PIL import Image
-import easyocr  # <--- Nova biblioteca de OCR
+import base64
 
 # ========================
 # CONFIGURAÇÃO DE AMBIENTE
 # ========================
 def carregar_api_key():
     try:
-        if "OPENROUTER_API_KEY" in st.secrets:
-            return st.secrets["OPENROUTER_API_KEY"]
+        if "GEMINI_API_KEY" in st.secrets:
+            return st.secrets["GEMINI_API_KEY"]
     except Exception:
         pass 
 
@@ -26,7 +23,7 @@ def carregar_api_key():
     try:
         with open(env_path, 'r', encoding='utf-8') as file:
             env_vars = yaml.safe_load(file)
-            return env_vars.get('OPENROUTER_API_KEY')
+            return env_vars.get('GEMINI_API_KEY')
     except FileNotFoundError:
         return None
     except Exception as e:
@@ -102,93 +99,131 @@ def generate_pdf(nome_cliente, quantidade, valor, logo_path, assinatura_path):
     pdf_bytes = pdf.output(dest='S').encode('latin1')
     return BytesIO(pdf_bytes)
 
-# ========================
-# MODELO OCR (EASYOCR)
-# ========================
-@st.cache_resource
-def carregar_modelo_ocr():
-    """Carrega o modelo EasyOCR para português e inglês"""
-    return easyocr.Reader(['pt','en'], gpu=False) # GPU=True se tiver NVidia
-
-def extrair_texto_imagem(imagem_cap):
-    """Extrai texto bruto da imagem capturada usando EasyOCR"""
-    try:
-        # Converter a imagem do Streamlit para um objeto Pillow
-        image = Image.open(imagem_cap)
-        
-        # Converter para formato que o EasyOCR aceita (array ou arquivo)
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp_file:
-            image.save(tmp_file.name)
-            tmp_path = tmp_file.name
-            
-        reader = carregar_modelo_ocr()
-        # Ler o texto da imagem
-        result = reader.readtext(tmp_path)
-        
-        # O EasyOCR retorna uma lista de tuplas [(bbox, text, prob), ...], pegamos o texto
-        texto_bruto = " ".join([detection[1] for detection in result])
-        
-        # Limpar arquivo temporário
-        os.unlink(tmp_path)
-        
-        return texto_bruto.strip()
-    except Exception as e:
-        st.error(f"⚠️ Erro no processamento de OCR: {e}")
-        return ""
-
-# ========================
-# OPENROUTER
-# ========================
-def extrair_dados(texto, api_key):
-    if not api_key:
+def extrair_dados_da_imagem(imagem_cap, gemini_key):
+    if not gemini_key:
         return None, None, None
 
-    prompt = f"""Você é um assistente de extração de dados especializado em leitura de textos OCR.
-O texto abaixo foi extraído de uma imagem e pode conter erros de ortografia e espaçamento.
-Sua única função é ler o texto e retornar um JSON válido com os dados extraídos.
-NÃO escreva introduções ou explicações.
+    # Lista de modelos em ordem de prioridade (conforme sua tabela)
+    modelos_disponiveis = [
+        "gemini-2.5-flash",
+        "gemini-3-flash",
+        "gemini-3.1-flash-lite",
+        "gemini-2.5-flash-lite"
+    ]
 
-Texto Extraído (OCR): "{texto}"
+    bytes_data = imagem_cap.getvalue()
+    base64_image = base64.b64encode(bytes_data).decode('utf-8')
+    
+    prompt = """Você é um especialista em ler anotações manuscritas de pedidos.
+    Extraia os dados da imagem seguindo rigorosamente estas regras:
+    
+    1. "nome": O nome do cliente, empresa ou estabelecimento. ATENÇÃO: NUNCA coloque o nome do produto vendido (como "Salgados", "Doces", "Coxinhas") neste campo.
+    2. "quantidade": A quantidade total de itens (apenas números).
+    3. "valor": O preço total a ser cobrado, em formato decimal (ex: 114.00).
+    4. Artigos, conjunções e preposição (como "do", "da", "de", "e") devem ser retornados em minúsculo.
+    Retorne os dados usando estritamente as chaves JSON: "nome", "quantidade" e "valor"."""
 
-Formato OBRIGATÓRIO (retorne APENAS o JSON):
-{{"nome": "Nome do Cliente", "quantidade": 0, "valor": 0.0}}"""
-
-    response = requests.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        },
-        json={
-            "model": "openrouter/free", 
-            "messages": [{"role": "user", "content": prompt}],
-            "temperature": 0.1
+    for modelo in modelos_disponiveis:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent?key={gemini_key}"
+        headers = {'Content-Type': 'application/json'}
+        
+        payload = {
+            "contents": [{"parts": [{"text": prompt}, {"inline_data": {"mime_type": "image/jpeg", "data": base64_image}}]}],
+            "generationConfig": {"temperature": 0.1, "response_mime_type": "application/json"}
         }
-    )
 
-    if response.status_code != 200:
-        st.error(f"Erro na API: {response.text}")
-        return None, None, None
-
-    data = response.json()
-    resposta = data["choices"][0]["message"]["content"]
-    match = re.search(r'\{.*\}', resposta, re.DOTALL)
-
-    if match:
         try:
-            dados = json.loads(match.group(0))
-            return dados.get("nome", ""), dados.get("quantidade", 0), float(dados.get("valor", 0.0))
-        except json.JSONDecodeError:
-            return None, None, None
+            response = requests.post(url, headers=headers, json=payload)
             
+            # Se atingiu o limite (Erro 429), tenta o próximo modelo da lista
+            if response.status_code == 429:
+                st.warning(f"⚠️ Limite atingido no {modelo}. Tentando modelo de backup...")
+                continue 
+            
+            if response.status_code != 200:
+                st.error(f"Erro no modelo {modelo}: {response.status_code}")
+                continue
+
+            data = response.json()
+            resposta = data["candidates"][0]["content"]["parts"][0]["text"]
+            dados = json.loads(resposta)
+            return dados.get("nome", ""), dados.get("quantidade", 0), float(dados.get("valor", 0.0))
+
+        except Exception as e:
+            continue # Tenta o próximo em caso de falha de conexão
+
+    st.error("❌ Todos os modelos atingiram o limite ou falharam. Tente novamente em alguns minutos.")
     return None, None, None
 
+# ========================
+# API DIRETA DO GOOGLE GEMINI
+# ========================
+# def extrair_dados_da_imagem(imagem_cap, gemini_key):
+#     """Envia a imagem direto para a API oficial do Google Gemini"""
+#     if not gemini_key:
+#         return None, None, None
+
+#     # Prepara a imagem
+#     bytes_data = imagem_cap.getvalue()
+#     base64_image = base64.b64encode(bytes_data).decode('utf-8')
+
+#     # URL oficial do Google AI Studio para o Gemini 2.5 Flash
+#     url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={gemini_key}"
+    
+#     headers = {'Content-Type': 'application/json'}
+    
+#     prompt = """Você é um especialista em ler anotações manuscritas de pedidos.
+#     Extraia os dados da imagem seguindo rigorosamente estas regras:
+    
+#     1. "nome": O nome do cliente, empresa ou estabelecimento. ATENÇÃO: NUNCA coloque o nome do produto vendido (como "Salgados", "Doces", "Coxinhas") neste campo.
+#     2. "quantidade": A quantidade total de itens (apenas números).
+#     3. "valor": O preço total a ser cobrado, em formato decimal (ex: 114.00).
+#     4. A imagem contém um pedido de compra de produtos de salgados.
+#     5. NÃO escreva introduções, explicações ou formatação markdown.
+#     6. Artigos, conjunções e preposição (como "do", "da", "de", "e") devem ser escritos em minúsculo.
+#     Retorne os dados usando estritamente as chaves JSON: "nome", "quantidade" e "valor"."""
+
+#     payload = {
+#         "contents": [{
+#             "parts": [
+#                 {"text": prompt},
+#                 {
+#                     "inline_data": {
+#                         "mime_type": "image/jpeg",
+#                         "data": base64_image
+#                     }
+#                 }
+#             ]
+#         }],
+#         "generationConfig": {
+#             "temperature": 0.1,
+#             "response_mime_type": "application/json" # Mágica do Google: força o modelo a retornar JSON válido!
+#         }
+#     }
+
+#     try:
+#         response = requests.post(url, headers=headers, json=payload)
+        
+#         if response.status_code != 200:
+#             st.error(f"Erro na API do Google: {response.text}")
+#             return None, None, None
+
+#         data = response.json()
+#         resposta = data["candidates"][0]["content"]["parts"][0]["text"]
+        
+#         # Como forçamos o response_mime_type, ele já vem como JSON limpo, sem precisar de Regex!
+#         dados = json.loads(resposta)
+#         return dados.get("nome", ""), dados.get("quantidade", 0), float(dados.get("valor", 0.0))
+
+#     except Exception as e:
+#         st.error(f"Falha ao conectar com o Google: {e}")
+#         return None, None, None
 
 # ========================
 # UI - STREAMLIT
 # ========================
-st.set_page_config(page_title="Gerador de Recibo com IA (Visão)", page_icon="📝")
-st.title("📷 Gerador de Recibo Inteligente (Visão)")
+st.set_page_config(page_title="Gerador de Recibo Inteligente", page_icon="📝")
+st.title("📷 Gerador de Recibo Inteligente")
 
 API_KEY = carregar_api_key()
 
@@ -196,12 +231,10 @@ BASE_DIR = os.path.dirname(__file__)
 logo_path = os.path.join(BASE_DIR, "images", "logo.png")
 assinatura_path = os.path.join(BASE_DIR, "images", "assinatura.png")
 
-# Inicializa as variáveis na memória da sessão
 if "dados_extraidos" not in st.session_state:
     st.session_state.dados_extraidos = False
 if "ultima_imagem_id" not in st.session_state:
     st.session_state.ultima_imagem_id = None
-# Inicializamos as chaves que vão se conectar diretamente aos widgets
 if "nome" not in st.session_state:
     st.session_state.nome = ""
 if "qtd" not in st.session_state:
@@ -211,56 +244,40 @@ if "val" not in st.session_state:
 
 with st.sidebar:
     if API_KEY:
-        st.success("✅ Chave da API carregada.")
+        st.success("✅ Chave do Gemini conectada!")
     else:
-        st.warning("❌ Chave da API ausente.")
-    st.info("O processamento OCR é feito localmente. Apenas o texto extraído vai para a IA do OpenRouter.")
+        st.warning("❌ Chave do Gemini ausente.")
+    st.info("A imagem será enviada para o Google Gemini ler a caligrafia.")
 
-# Entrada da câmera (Não exibe o texto transcrito, apenas a imagem)
-imagem_cap = st.camera_input("📷 Tire uma foto do seu documento ou anotação")
+imagem_cap = st.camera_input("📷 Tire uma foto do seu documento ou anotação manuscrita")
 
-# Lógica de processamento automático da imagem
 if imagem_cap is not None:
-    
-    # O Streamlit fornece um ID único para cada captura de imagem
-    if st.session_state.ultima_imagem_id != imagem_cap.id:
-        st.session_state.ultima_imagem_id = imagem_cap.id # Salva o novo ID na memória
+    if st.session_state.ultima_imagem_id != imagem_cap.file_id:
+        st.session_state.ultima_imagem_id = imagem_cap.file_id
         
         if not API_KEY:
-            st.error("⚠️ API Key ausente. Configure para processar a imagem.")
+            st.error("⚠️ Configure sua chave do Gemini para processar a imagem.")
         else:
-            with st.spinner("Lendo imagem com OCR e extraindo dados..."):
-                # 1. Extrair texto bruto da imagem (OCR local)
-                texto_ocr = extrair_texto_imagem(imagem_cap)
+            with st.spinner("O Google Gemini está lendo a sua caligrafia..."):
+                nome, qtd, val = extrair_dados_da_imagem(imagem_cap, API_KEY)
                 
-                # Opcional: Para debugar o que o OCR leu, descomente a linha abaixo
-                # st.write(f"Texto OCR Bruto: {texto_ocr}")
-                
-                if texto_ocr:
-                    # 2. Enviar texto OCR para a IA extrair os valores
-                    nome, qtd, val = extrair_dados(texto_ocr, API_KEY)
-                    
-                    if nome is not None:
-                        # Atualiza os valores direto no session_state (isso atualiza a tela)
-                        st.session_state.nome = str(nome).title()
+                if nome is not None:
+                    st.session_state.nome = str(nome).title()
+                    try:
+                        st.session_state.qtd = int(qtd)
+                    except:
+                        st.session_state.qtd = 0
+                    try:
+                        st.session_state.val = float(val)
+                    except:
+                        st.session_state.val = 0.0
                         
-                        try:
-                            st.session_state.qtd = int(qtd)
-                        except:
-                            st.session_state.qtd = 0
-                            
-                        try:
-                            st.session_state.val = float(val)
-                        except:
-                            st.session_state.val = 0.0
-                            
-                        st.session_state.dados_extraidos = True
+                    st.session_state.dados_extraidos = True
                 else:
-                    st.warning("Não foi possível ler nenhum texto na imagem. Tente tirar uma foto mais clara e focada.")
+                    st.warning("A imagem não ficou clara. Tente tirar uma foto mais focada e iluminada.")
 
 st.divider()
 
-# Exibe os campos (agora conectados diretamente ao session_state via parâmetro "key")
 if st.session_state.dados_extraidos:
     st.subheader("Verifique os dados do Recibo:")
     
@@ -274,7 +291,7 @@ if st.session_state.dados_extraidos:
     
     if nome_final and qtd_final > 0 and val_final > 0:
         try:
-            pdf_bytes = generate_pdf(nome_final, qtd_final, val_final, logo_path, azure_assinatura_path)
+            pdf_bytes = generate_pdf(nome_final, qtd_final, val_final, logo_path, assinatura_path)
             nome_arquivo = nome_final.lower().replace(" ", "_")
             
             st.download_button(
