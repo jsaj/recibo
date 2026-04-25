@@ -4,3 +4,5 @@ num2words
 faster-whisper
 requests
 PyYAML
+easyocr
+Pillow
