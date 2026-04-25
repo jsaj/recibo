@@ -222,8 +222,28 @@ def extrair_dados_da_imagem(imagem_cap, gemini_key):
 # ========================
 # UI - STREAMLIT
 # ========================
-st.set_page_config(page_title="Gerador de Recibo Inteligente", page_icon="📝")
+st.set_page_config(
+    page_title="Gerador de Recibo Inteligente", 
+    page_icon="📝",
+    layout="wide"  # Isso remove as margens laterais e expande tudo
+)
 st.title("📷 Gerador de Recibo Inteligente")
+
+st.markdown("""
+    <style>
+    /* Faz o container da câmera ocupar toda a largura disponível */
+    div[data-testid="stCameraInput"] {
+        width: 100% !important;
+        max-width: 1000px !important; /* Aumente este valor conforme desejar */
+        margin: 0 auto;
+    }
+    /* Aumenta a visualização do vídeo em si */
+    div[data-testid="stCameraInput"] video {
+        border-radius: 10px;
+        border: 2px solid #007bff;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 API_KEY = carregar_api_key()
 
