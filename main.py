@@ -242,13 +242,6 @@ if "qtd" not in st.session_state:
 if "val" not in st.session_state:
     st.session_state.val = 0.0
 
-with st.sidebar:
-    if API_KEY:
-        st.success("✅ Chave do Gemini conectada!")
-    else:
-        st.warning("❌ Chave do Gemini ausente.")
-    st.info("A imagem será enviada para o Google Gemini ler a caligrafia.")
-
 imagem_cap = st.camera_input("📷 Tire uma foto do seu documento ou anotação manuscrita")
 
 if imagem_cap is not None:
@@ -262,7 +255,24 @@ if imagem_cap is not None:
                 nome, qtd, val = extrair_dados_da_imagem(imagem_cap, API_KEY)
                 
                 if nome is not None:
-                    st.session_state.nome = str(nome).title()
+                    # Função interna para formatar o nome respeitando as exceções
+                    def formatar_nome_ptbr(texto):
+                        excecoes = ['de', 'do', 'da', 'dos', 'das', 'e', 'o', 'os', 'a', 'as']
+                        palavras = texto.split()
+                        resultado = []
+                        for i, palavra in enumerate(palavras):
+                            palavra_lower = palavra.lower()
+                            # A primeira palavra sempre é Maiúscula, as outras dependem da lista de exceções
+                            if i == 0 or palavra_lower not in excecoes:
+                                resultado.append(palavra.capitalize())
+                            else:
+                                resultado.append(palavra_lower)
+                        return " ".join(resultado)
+
+                    # Aplica a formatação inteligente no nome extraído
+                    st.session_state.nome = formatar_nome_ptbr(str(nome))
+                    
+                    # Restante do código de processamento...
                     try:
                         st.session_state.qtd = int(qtd)
                     except:
