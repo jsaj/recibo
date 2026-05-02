@@ -5,52 +5,33 @@ import num2words
 import os
 from datetime import datetime
 
+
 class CustomPDF(FPDF):
     def header(self):
-        pass  # Remove cabeçalho automático
+        pass
 
 
-def data_atual_em_texto():
+def data_em_texto(data):
     meses = {
-        'January': 'Janeiro',
-        'February': 'Fevereiro',
-        'March': 'Março',
-        'April': 'Abril',
-        'May': 'Maio',
-        'June': 'Junho',
-        'July': 'Julho',
-        'August': 'Agosto',
-        'September': 'Setembro',
-        'October': 'Outubro',
-        'November': 'Novembro',
-        'December': 'Dezembro'
+        1: 'Janeiro', 2: 'Fevereiro', 3: 'Março',
+        4: 'Abril', 5: 'Maio', 6: 'Junho',
+        7: 'Julho', 8: 'Agosto', 9: 'Setembro',
+        10: 'Outubro', 11: 'Novembro', 12: 'Dezembro'
     }
 
-    data = datetime.now()
-    data_formatada = data.strftime('%d de %B de %Y')
-
-    mes = data_formatada.split('de')[1].strip()
-    data_formatada = data_formatada.replace(mes, meses[mes])
-
-    return data_formatada
+    return f"{data.day} de {meses[data.month]} de {data.year}"
 
 
-def generate_pdf(nome_cliente, quantidade, valor, logo_path, assinatura_path):
+def generate_pdf(nome_cliente, quantidade, valor, data_recibo, logo_path, assinatura_path):
     pdf = CustomPDF()
 
     pdf.set_left_margin(20)
     pdf.set_right_margin(20)
     pdf.add_page()
 
-    # Verificação de arquivos
-    if not os.path.exists(logo_path):
-        raise FileNotFoundError(f"Logo não encontrada: {logo_path}")
-
-    if not os.path.exists(assinatura_path):
-        raise FileNotFoundError(f"Assinatura não encontrada: {assinatura_path}")
-
     # Logo
-    pdf.image(logo_path, x=87.5, y=30, w=35)
+    if os.path.exists(logo_path):
+        pdf.image(logo_path, x=87.5, y=30, w=35)
 
     # Título
     pdf.set_font('Times', 'B', 18)
@@ -64,7 +45,6 @@ def generate_pdf(nome_cliente, quantidade, valor, logo_path, assinatura_path):
     valor_extenso = num2words.num2words(valor, lang='pt_BR', to='currency')
     quantidade_extenso = num2words.num2words(quantidade, lang='pt_BR')
 
-    # Formatação brasileira
     valor_corrigido = f"{valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
 
     if quantidade < 1000:
@@ -74,7 +54,7 @@ def generate_pdf(nome_cliente, quantidade, valor, logo_path, assinatura_path):
 
     texto = (
         f"Eu, Maria Verônica Gomes Pereira Avelino, CPF: 047.589.934-24, "
-        f"recebi do(a) {nome_cliente} o valor de R$ {valor_corrigido} ({valor_extenso}), "
+        f"recebi do(a) {nome_cliente} no valor de R$ {valor_corrigido} ({valor_extenso}), "
         f"referente ao fornecimento de {quantidade_corrigido} ({quantidade_extenso}) salgados."
     )
 
@@ -82,21 +62,21 @@ def generate_pdf(nome_cliente, quantidade, valor, logo_path, assinatura_path):
 
     # Data
     pdf.ln(40)
-    data_hoje = data_atual_em_texto()
-    pdf.cell(0, 10, f"Lajes/RN, {data_hoje}", ln=True, align='C')
+    data_formatada = data_em_texto(data_recibo)
+    pdf.cell(0, 10, f"Lajes/RN, {data_formatada}", ln=True, align='C')
 
     # Assinatura
     pdf.ln(50)
-    pdf.image(assinatura_path, x=65, w=80)
-    pdf.ln(-5)
+    if os.path.exists(assinatura_path):
+        pdf.image(assinatura_path, x=65, w=80)
 
+    pdf.ln(-5)
     pdf.set_font('Times', '', 11)
     pdf.cell(0, 10, "_______________________________________", ln=True, align='C')
     pdf.ln(-5)
     pdf.cell(0, 10, "Maria Verônica Gomes Pereira Avelino", ln=True, align='C')
 
     pdf_bytes = pdf.output(dest='S').encode('latin1')
-
     return BytesIO(pdf_bytes)
 
 
@@ -106,27 +86,40 @@ def generate_pdf(nome_cliente, quantidade, valor, logo_path, assinatura_path):
 
 st.title('Gerador de Recibo')
 
+# 1. Nome
 nome_cliente = st.text_input('Nome do Cliente')
-quantidade = st.number_input('Quantidade de Itens', min_value=1, step=1)
+
+# 2. Quantidade
+quantidade = st.number_input('Quantidade de Salgados', min_value=1, step=1)
+
+# 3. Valor
 valor = st.number_input('Valor Total (R$)', min_value=0.0, step=0.01)
 
-# Caminhos locais das imagens
-BASE_DIR = os.path.dirname(__file__)
+# 4. Data (editável)
+data_recibo = st.date_input('Data do Recibo', value=datetime.today())
 
+# Caminhos das imagens
+BASE_DIR = os.path.dirname(__file__)
 logo_path = os.path.join(BASE_DIR, "images", "logo.png")
 assinatura_path = os.path.join(BASE_DIR, "images", "assinatura.png")
 
+
 if st.button('Gerar PDF'):
+
+    if not nome_cliente:
+        st.error("Informe o nome do cliente.")
+        st.stop()
+
     pdf_bytes = generate_pdf(
         nome_cliente,
         quantidade,
         valor,
+        data_recibo,
         logo_path,
         assinatura_path
     )
 
-    nome_cliente_saida = nome_cliente.lower().split()
-    nome_cliente_saida = "_".join(nome_cliente_saida)
+    nome_cliente_saida = "_".join(nome_cliente.lower().split())
 
     st.download_button(
         label="Baixar PDF",
