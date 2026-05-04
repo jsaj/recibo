@@ -78,7 +78,7 @@ def generate_pdf(nome_cliente, quantidade, valor, data_recibo, tipo_item, logo_p
 
         texto = (
             f"Eu, Maria Verônica Gomes Pereira Avelino, CPF: 047.589.934-24, "
-            f"recebi do(a) {nome_cliente} no valor de R$ {valor_corrigido} ({valor_extenso}), "
+            f"recebi do(a) {nome_cliente} o pagamento no valor de R$ {valor_corrigido} ({valor_extenso}), "
             f"referente ao fornecimento de {quantidade_corrigido} ({quantidade_extenso}) {tipo_item_minuscula}."
         )
 
