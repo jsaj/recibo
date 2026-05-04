@@ -22,7 +22,7 @@ def data_em_texto(data):
     return f"{data.day} de {meses[data.month]} de {data.year}"
 
 
-def generate_pdf(nome_cliente, quantidade, valor, data_recibo, logo_path, assinatura_path):
+def generate_pdf(nome_cliente, quantidade, valor, data_recibo, tipo_item, logo_path, assinatura_path):
     pdf = CustomPDF()
 
     pdf.set_left_margin(20)
@@ -52,10 +52,13 @@ def generate_pdf(nome_cliente, quantidade, valor, data_recibo, logo_path, assina
     else:
         quantidade_corrigido = f"{quantidade:,}".replace(',', '.')
 
+    # Determinar a palavra para o tipo de item
+    tipo_item_minuscula = tipo_item.lower()
+
     texto = (
         f"Eu, Maria Verônica Gomes Pereira Avelino, CPF: 047.589.934-24, "
         f"recebi do(a) {nome_cliente} no valor de R$ {valor_corrigido} ({valor_extenso}), "
-        f"referente ao fornecimento de {quantidade_corrigido} ({quantidade_extenso}) salgados."
+        f"referente ao fornecimento de {quantidade_corrigido} ({quantidade_extenso}) {tipo_item_minuscula}."
     )
 
     pdf.multi_cell(0, 5, texto, align='J')
@@ -89,13 +92,20 @@ st.title('Gerador de Recibo')
 # 1. Nome
 nome_cliente = st.text_input('Nome do Cliente')
 
-# 2. Quantidade
-quantidade = st.number_input('Quantidade de Salgados', min_value=1, step=1)
+# 2. Tipo de Item (Itens ou Salgados)
+tipo_item = st.radio(
+    'Tipo de Item:',
+    options=['Itens', 'Salgados'],
+    horizontal=False
+)
 
-# 3. Valor
+# 3. Quantidade
+quantidade = st.number_input(f'Quantidade de {tipo_item}', min_value=1, step=1)
+
+# 4. Valor
 valor = st.number_input('Valor Total (R$)', min_value=0.0, step=0.01)
 
-# 4. Data (editável)
+# 5. Data (editável)
 data_recibo = st.date_input('Data do Recibo', value=datetime.today())
 
 # Caminhos das imagens
@@ -115,6 +125,7 @@ if st.button('Gerar PDF'):
         quantidade,
         valor,
         data_recibo,
+        tipo_item,
         logo_path,
         assinatura_path
     )
