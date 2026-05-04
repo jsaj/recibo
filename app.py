@@ -22,7 +22,7 @@ def data_em_texto(data):
     return f"{data.day} de {meses[data.month]} de {data.year}"
 
 
-def generate_pdf(nome_cliente, quantidade, valor, data_recibo, tipo_item, logo_path, assinatura_path):
+def generate_pdf(nome_cliente, quantidade, valor, data_recibo, tipo_item, logo_path, assinatura_path, itens_misto=None):
     pdf = CustomPDF()
 
     pdf.set_left_margin(20)
@@ -43,23 +43,44 @@ def generate_pdf(nome_cliente, quantidade, valor, data_recibo, tipo_item, logo_p
     pdf.ln(25)
 
     valor_extenso = num2words.num2words(valor, lang='pt_BR', to='currency')
-    quantidade_extenso = num2words.num2words(quantidade, lang='pt_BR')
-
     valor_corrigido = f"{valor:,.2f}".replace(',', 'X').replace('.', ',').replace('X', '.')
 
-    if quantidade < 1000:
-        quantidade_corrigido = quantidade
+    # Construir texto de quantidade e descrição
+    if tipo_item == "Misto":
+        # Construir descrição dos itens mistos
+        descricao_itens = []
+        if itens_misto:
+            for item in itens_misto:
+                if item['quantidade'] > 0:
+                    quantidade_extensa = num2words.num2words(item['quantidade'], lang='pt_BR')
+                    if item['quantidade'] < 1000:
+                        quantidade_formatada = item['quantidade']
+                    else:
+                        quantidade_formatada = f"{item['quantidade']:,}".replace(',', '.')
+                    descricao_itens.append(f"{quantidade_formatada} ({quantidade_extensa}) {item['tipo'].lower()}")
+        
+        descricao = " e ".join(descricao_itens) if descricao_itens else ""
+        texto = (
+            f"Eu, Maria Verônica Gomes Pereira Avelino, CPF: 047.589.934-24, "
+            f"recebi do(a) {nome_cliente} o pagamento no valor de R$ {valor_corrigido} ({valor_extenso}), "
+            f"referente ao fornecimento de {descricao}."
+        )
     else:
-        quantidade_corrigido = f"{quantidade:,}".replace(',', '.')
+        # Tipo simples (Itens ou Salgados)
+        quantidade_extenso = num2words.num2words(quantidade, lang='pt_BR')
 
-    # Determinar a palavra para o tipo de item
-    tipo_item_minuscula = tipo_item.lower()
+        if quantidade < 1000:
+            quantidade_corrigido = quantidade
+        else:
+            quantidade_corrigido = f"{quantidade:,}".replace(',', '.')
 
-    texto = (
-        f"Eu, Maria Verônica Gomes Pereira Avelino, CPF: 047.589.934-24, "
-        f"recebi do(a) {nome_cliente} no valor de R$ {valor_corrigido} ({valor_extenso}), "
-        f"referente ao fornecimento de {quantidade_corrigido} ({quantidade_extenso}) {tipo_item_minuscula}."
-    )
+        tipo_item_minuscula = tipo_item.lower()
+
+        texto = (
+            f"Eu, Maria Verônica Gomes Pereira Avelino, CPF: 047.589.934-24, "
+            f"recebi do(a) {nome_cliente} no valor de R$ {valor_corrigido} ({valor_extenso}), "
+            f"referente ao fornecimento de {quantidade_corrigido} ({quantidade_extenso}) {tipo_item_minuscula}."
+        )
 
     pdf.multi_cell(0, 5, texto, align='J')
 
@@ -92,20 +113,69 @@ st.title('Gerador de Recibo')
 # 1. Nome
 nome_cliente = st.text_input('Nome do Cliente')
 
-# 2. Tipo de Item (Itens ou Salgados)
+# 2. Tipo de Item (Itens, Salgados ou Misto)
 tipo_item = st.radio(
     'Tipo de Item:',
-    options=['Itens', 'Salgados'],
+    options=['Itens', 'Salgados', 'Misto'],
     horizontal=False
 )
 
-# 3. Quantidade
-quantidade = st.number_input(f'Quantidade de {tipo_item}', min_value=1, step=1)
+# 3. Quantidade (aparecer apenas se não for Misto)
+if tipo_item != "Misto":
+    quantidade = st.number_input(f'Quantidade de {tipo_item}', min_value=1, step=1)
+else:
+    quantidade = 0
 
-# 4. Valor
+# 4. Itens Mistos (aparecer apenas se for Misto)
+itens_misto = None
+if tipo_item == "Misto":
+    st.subheader("Itens do Recibo")
+    
+    # Inicializar estado da sessão se não existir
+    if 'itens_misto_list' not in st.session_state:
+        st.session_state.itens_misto_list = [{'tipo': '', 'quantidade': 0}]
+    
+    itens_misto = []
+    
+    # Criar inputs para cada item
+    for idx in range(len(st.session_state.itens_misto_list)):
+        col1, col2, col3 = st.columns([2, 1, 0.5])
+        
+        with col1:
+            tipo = st.text_input(
+                f'Tipo de Item {idx + 1}',
+                value=st.session_state.itens_misto_list[idx]['tipo'],
+                key=f'tipo_{idx}'
+            )
+            st.session_state.itens_misto_list[idx]['tipo'] = tipo
+        
+        with col2:
+            qtd = st.number_input(
+                f'Quantidade {idx + 1}',
+                min_value=0,
+                step=1,
+                value=st.session_state.itens_misto_list[idx]['quantidade'],
+                key=f'qtd_{idx}'
+            )
+            st.session_state.itens_misto_list[idx]['quantidade'] = qtd
+        
+        with col3:
+            if st.button('Remover', key=f'remove_{idx}'):
+                st.session_state.itens_misto_list.pop(idx)
+                st.rerun()
+        
+        if tipo and qtd > 0:
+            itens_misto.append({'tipo': tipo, 'quantidade': qtd})
+    
+    # Botão para adicionar novo item
+    if st.button('Adicionar Item'):
+        st.session_state.itens_misto_list.append({'tipo': '', 'quantidade': 0})
+        st.rerun()
+
+# 5. Valor
 valor = st.number_input('Valor Total (R$)', min_value=0.0, step=0.01)
 
-# 5. Data (editável)
+# 6. Data (editável)
 data_recibo = st.date_input('Data do Recibo', value=datetime.today())
 
 # Caminhos das imagens
@@ -120,6 +190,15 @@ if st.button('Gerar PDF'):
         st.error("Informe o nome do cliente.")
         st.stop()
 
+    if tipo_item != "Misto" and quantidade <= 0:
+        st.error("Informe a quantidade.")
+        st.stop()
+
+    if tipo_item == "Misto":
+        if not itens_misto:
+            st.error("Adicione pelo menos um item ao recibo misto.")
+            st.stop()
+
     pdf_bytes = generate_pdf(
         nome_cliente,
         quantidade,
@@ -127,7 +206,8 @@ if st.button('Gerar PDF'):
         data_recibo,
         tipo_item,
         logo_path,
-        assinatura_path
+        assinatura_path,
+        itens_misto=itens_misto
     )
 
     nome_cliente_saida = "_".join(nome_cliente.lower().split())
