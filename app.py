@@ -105,32 +105,226 @@ def generate_pdf(nome_cliente, quantidade, valor, data_recibo, tipo_item, logo_p
 
 
 # ========================
+# CUSTOM CSS
+# ========================
+
+st.set_page_config(
+    page_title="Gerador de Recibo",
+    page_icon="📄",
+    layout="centered",
+    initial_sidebar_state="collapsed"
+)
+
+# CSS customizado
+custom_css = """
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    [data-testid="stMainBlockContainer"] {
+        padding-top: 0;
+        padding-bottom: 2rem;
+    }
+    
+    [data-testid="stHeader"] {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .form-card {
+        background-color: white;
+        border-radius: 12px;
+        padding: 2.5rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        margin: 0 auto;
+        max-width: 600px;
+    }
+    
+    .title-container {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 2px solid #667eea;
+    }
+    
+    .title-container h1 {
+        color: #2c3e50;
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .title-container p {
+        color: #7f8c8d;
+        font-size: 0.95rem;
+    }
+    
+    .section-title {
+        color: #667eea;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 1.5rem 0 1rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .section-number {
+        background-color: #667eea;
+        color: white;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.9rem;
+    }
+    
+    [data-testid="stTextInput"] input {
+        border: 1px solid #ddd !important;
+        border-radius: 6px !important;
+        padding: 0.75rem !important;
+        font-size: 0.95rem !important;
+    }
+    
+    [data-testid="stNumberInput"] input {
+        border: 1px solid #ddd !important;
+        border-radius: 6px !important;
+        padding: 0.75rem !important;
+        font-size: 0.95rem !important;
+    }
+    
+    [data-testid="stDateInput"] input {
+        border: 1px solid #ddd !important;
+        border-radius: 6px !important;
+        padding: 0.75rem !important;
+        font-size: 0.95rem !important;
+    }
+    
+    [data-testid="stRadio"] {
+        margin: 1rem 0;
+    }
+    
+    [data-testid="stRadio"] label {
+        background-color: #f8f9fa;
+        padding: 0.75rem 1rem !important;
+        border-radius: 6px;
+        margin-bottom: 0.5rem !important;
+        border: 2px solid transparent !important;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    [data-testid="stRadio"] label:hover {
+        background-color: #e9ecef;
+        border-color: #667eea !important;
+    }
+    
+    .stButton > button {
+        width: 100%;
+        padding: 0.75rem 1.5rem !important;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 6px !important;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3) !important;
+    }
+    
+    [data-testid="stDownloadButton"] > button {
+        width: 100%;
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%) !important;
+        color: white !important;
+        padding: 0.75rem 1.5rem !important;
+        border-radius: 6px !important;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    
+    [data-testid="stDownloadButton"] > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(17, 153, 142, 0.3) !important;
+    }
+    
+    [data-testid="stAlert"] {
+        border-radius: 6px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    
+    [data-testid="stMarkdownContainer"] h3 {
+        color: #667eea;
+        font-size: 1.1rem;
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+    }
+</style>
+"""
+
+st.markdown(custom_css, unsafe_allow_html=True)
+
+# ========================
 # STREAMLIT UI
 # ========================
 
-st.title('Gerador de Recibo')
+# Container principal
+st.markdown('<div class="form-card">', unsafe_allow_html=True)
 
-# 1. Nome
-nome_cliente = st.text_input('Nome do Cliente')
+# Título
+st.markdown("""
+<div class="title-container">
+    <h1>📄 Gerador de Recibo</h1>
+    <p>Preencha os dados abaixo para gerar seu recibo de pagamento</p>
+</div>
+""", unsafe_allow_html=True)
 
-# 2. Tipo de Item (Itens, Salgados ou Misto)
-tipo_item = st.radio(
-    'Tipo de Item:',
-    options=['Itens', 'Salgados', 'Misto'],
-    horizontal=False
+# Seção 1: Nome do Cliente
+st.markdown('<div class="section-title"><div class="section-number">1</div>Dados do Cliente</div>', unsafe_allow_html=True)
+nome_cliente = st.text_input(
+    'Nome do Cliente',
+    placeholder='Digite o nome completo do cliente',
+    label_visibility='collapsed'
 )
 
-# 3. Quantidade (aparecer apenas se não for Misto)
+# Seção 2: Tipo de Item
+st.markdown('<div class="section-title"><div class="section-number">2</div>Tipo de Item</div>', unsafe_allow_html=True)
+tipo_item = st.radio(
+    'Selecione uma opção',
+    options=['Itens', 'Salgados', 'Misto'],
+    horizontal=True,
+    label_visibility='collapsed'
+)
+
+# Seção 3: Quantidade ou Itens Mistos
+st.markdown('<div class="section-title"><div class="section-number">3</div>Detalhes da Entrega</div>', unsafe_allow_html=True)
+
 if tipo_item != "Misto":
-    quantidade = st.number_input(f'Quantidade de {tipo_item}', min_value=1, step=1)
+    quantidade = st.number_input(
+        f'Quantidade de {tipo_item}',
+        min_value=1,
+        step=1,
+        placeholder=f'Digite a quantidade de {tipo_item.lower()}',
+        label_visibility='collapsed'
+    )
 else:
     quantidade = 0
 
-# 4. Itens Mistos (aparecer apenas se for Misto)
+# Itens Mistos
 itens_misto = None
 if tipo_item == "Misto":
-    st.subheader("Itens do Recibo")
-    
     # Inicializar estado da sessão se não existir
     if 'itens_misto_list' not in st.session_state:
         st.session_state.itens_misto_list = [{'tipo': '', 'quantidade': 0}]
@@ -139,28 +333,31 @@ if tipo_item == "Misto":
     
     # Criar inputs para cada item
     for idx in range(len(st.session_state.itens_misto_list)):
-        col1, col2, col3 = st.columns([2, 1, 0.5])
+        col1, col2, col3 = st.columns([2, 1, 0.4], gap="small")
         
         with col1:
             tipo = st.text_input(
                 f'Tipo de Item {idx + 1}',
                 value=st.session_state.itens_misto_list[idx]['tipo'],
-                key=f'tipo_{idx}'
+                key=f'tipo_{idx}',
+                placeholder='Ex: Salgados, Refrigerantes',
+                label_visibility='collapsed'
             )
             st.session_state.itens_misto_list[idx]['tipo'] = tipo
         
         with col2:
             qtd = st.number_input(
-                f'Quantidade {idx + 1}',
+                f'Qtd {idx + 1}',
                 min_value=0,
                 step=1,
                 value=st.session_state.itens_misto_list[idx]['quantidade'],
-                key=f'qtd_{idx}'
+                key=f'qtd_{idx}',
+                label_visibility='collapsed'
             )
             st.session_state.itens_misto_list[idx]['quantidade'] = qtd
         
         with col3:
-            if st.button('Remover', key=f'remove_{idx}'):
+            if st.button('🗑️', key=f'remove_{idx}', help='Remover item'):
                 st.session_state.itens_misto_list.pop(idx)
                 st.rerun()
         
@@ -168,53 +365,78 @@ if tipo_item == "Misto":
             itens_misto.append({'tipo': tipo, 'quantidade': qtd})
     
     # Botão para adicionar novo item
-    if st.button('Adicionar Item'):
+    if st.button('➕ Adicionar Item', use_container_width=True):
         st.session_state.itens_misto_list.append({'tipo': '', 'quantidade': 0})
         st.rerun()
 
-# 5. Valor
-valor = st.number_input('Valor Total (R$)', min_value=0.0, step=0.01)
+# Seção 4: Valor e Data
+st.markdown('<div class="section-title"><div class="section-number">4</div>Informações Financeiras</div>', unsafe_allow_html=True)
 
-# 6. Data (editável)
-data_recibo = st.date_input('Data do Recibo', value=datetime.today())
+col1, col2 = st.columns(2, gap="medium")
+
+with col1:
+    valor = st.number_input(
+        'Valor Total (R$)',
+        min_value=0.0,
+        step=0.01,
+        placeholder='0,00',
+        label_visibility='collapsed'
+    )
+
+with col2:
+    data_recibo = st.date_input(
+        'Data do Recibo',
+        value=datetime.today(),
+        label_visibility='collapsed'
+    )
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 # Caminhos das imagens
 BASE_DIR = os.path.dirname(__file__)
 logo_path = os.path.join(BASE_DIR, "images", "logo.png")
 assinatura_path = os.path.join(BASE_DIR, "images", "assinatura.png")
 
+# Botão Gerar PDF
+gerar_pdf = st.button('📋 Gerar PDF', use_container_width=True)
 
-if st.button('Gerar PDF'):
-
-    if not nome_cliente:
-        st.error("Informe o nome do cliente.")
-        st.stop()
+if gerar_pdf:
+    # Validações
+    erro = False
+    
+    if not nome_cliente.strip():
+        st.error("⚠️ Por favor, informe o nome do cliente.")
+        erro = True
 
     if tipo_item != "Misto" and quantidade <= 0:
-        st.error("Informe a quantidade.")
-        st.stop()
+        st.error("⚠️ Por favor, informe a quantidade.")
+        erro = True
 
     if tipo_item == "Misto":
         if not itens_misto:
-            st.error("Adicione pelo menos um item ao recibo misto.")
-            st.stop()
+            st.error("⚠️ Adicione pelo menos um item ao recibo misto.")
+            erro = True
 
-    pdf_bytes = generate_pdf(
-        nome_cliente,
-        quantidade,
-        valor,
-        data_recibo,
-        tipo_item,
-        logo_path,
-        assinatura_path,
-        itens_misto=itens_misto
-    )
+    if not erro:
+        pdf_bytes = generate_pdf(
+            nome_cliente,
+            quantidade,
+            valor,
+            data_recibo,
+            tipo_item,
+            logo_path,
+            assinatura_path,
+            itens_misto=itens_misto
+        )
 
-    nome_cliente_saida = "_".join(nome_cliente.lower().split())
+        nome_cliente_saida = "_".join(nome_cliente.lower().split())
 
-    st.download_button(
-        label="Baixar PDF",
-        data=pdf_bytes,
-        file_name=f"recibo_{nome_cliente_saida}.pdf",
-        mime="application/pdf"
-    )
+        st.download_button(
+            label="✅ Baixar PDF",
+            data=pdf_bytes,
+            file_name=f"recibo_{nome_cliente_saida}.pdf",
+            mime="application/pdf",
+            use_container_width=True
+        )
+        
+        st.success("✨ Recibo gerado com sucesso! Clique no botão acima para fazer download.")
