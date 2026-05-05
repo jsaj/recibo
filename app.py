@@ -309,7 +309,7 @@ tipo_item = st.radio(
 )
 
 # Seção 3: Quantidade ou Itens Mistos
-st.markdown('<div class="section-title"><div class="section-number">3</div>Detalhes da Entrega</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title"><div class="section-number">3</div>Detalhes da Entrega (quantidade)</div>', unsafe_allow_html=True)
 
 if tipo_item != "Misto":
     quantidade = st.number_input(
