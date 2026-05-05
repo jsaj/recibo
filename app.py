@@ -370,7 +370,7 @@ if tipo_item == "Misto":
         st.rerun()
 
 # Seção 4: Valor e Data
-st.markdown('<div class="section-title"><div class="section-number">4</div>Informações Financeiras</div>', unsafe_allow_html=True)
+st.markdown('<div class="section-title"><div class="section-number">4</div>Valor (R$)</div>', unsafe_allow_html=True)
 
 col1, col2 = st.columns(2, gap="medium")
 
