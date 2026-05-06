@@ -22,7 +22,25 @@ def data_em_texto(data):
     return f"{data.day} de {meses[data.month]} de {data.year}"
 
 
-def generate_pdf(nome_cliente, quantidade, valor, data_recibo, tipo_item, logo_path, assinatura_path, itens_misto=None):
+def get_pessoa_info(escolha_pessoa):
+    """Retorna informações da pessoa selecionada"""
+    pessoas = {
+        'Maria Verônica Gomes Pereira': {
+            'nome': 'Maria Verônica Gomes Pereira',
+            'cpf': '047.589.934-24',
+            'assinatura': 'ass_001.png'
+        },
+        'Juscimara Gomes Avelino': {
+            'nome': 'Juscimara Gomes Avelino',
+            'cpf': '097.195.734-73',  # Ajuste para o CPF correto
+            'assinatura': 'ass_002.jpeg'
+        }
+    }
+    return pessoas.get(escolha_pessoa, pessoas['Maria Verônica Gomes Pereira'])
+
+
+def generate_pdf(nome_cliente, quantidade, valor, data_recibo, tipo_item, logo_path, assinatura_path, 
+                 nome_pessoa, cpf_pessoa, itens_misto=None):
     pdf = CustomPDF()
 
     pdf.set_left_margin(20)
@@ -61,7 +79,7 @@ def generate_pdf(nome_cliente, quantidade, valor, data_recibo, tipo_item, logo_p
         
         descricao = " e ".join(descricao_itens) if descricao_itens else ""
         texto = (
-            f"Eu, Maria Verônica Gomes Pereira Avelino, CPF: 047.589.934-24, "
+            f"Eu, {nome_pessoa}, CPF: {cpf_pessoa}, "
             f"recebi do(a) {nome_cliente} o pagamento no valor de R$ {valor_corrigido} ({valor_extenso}), "
             f"referente ao fornecimento de {descricao}."
         )
@@ -77,7 +95,7 @@ def generate_pdf(nome_cliente, quantidade, valor, data_recibo, tipo_item, logo_p
         tipo_item_minuscula = tipo_item.lower()
 
         texto = (
-            f"Eu, Maria Verônica Gomes Pereira Avelino, CPF: 047.589.934-24, "
+            f"Eu, {nome_pessoa}, CPF: {cpf_pessoa}, "
             f"recebi do(a) {nome_cliente} o pagamento no valor de R$ {valor_corrigido} ({valor_extenso}), "
             f"referente ao fornecimento de {quantidade_corrigido} ({quantidade_extenso}) {tipo_item_minuscula}."
         )
@@ -98,7 +116,7 @@ def generate_pdf(nome_cliente, quantidade, valor, data_recibo, tipo_item, logo_p
     pdf.set_font('Times', '', 11)
     pdf.cell(0, 10, "_______________________________________", ln=True, align='C')
     pdf.ln(-5)
-    pdf.cell(0, 10, "Maria Verônica Gomes Pereira Avelino", ln=True, align='C')
+    pdf.cell(0, 10, nome_pessoa, ln=True, align='C')
 
     pdf_bytes = pdf.output(dest='S').encode('latin1')
     return BytesIO(pdf_bytes)
@@ -206,6 +224,10 @@ custom_css = """
         font-size: 0.95rem !important;
     }
     
+    [data-testid="stSelectbox"] {
+        margin: 0.5rem 0;
+    }
+    
     [data-testid="stRadio"] {
         margin: 1rem 0;
     }
@@ -291,16 +313,35 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Seção 1: Nome do Cliente
-st.markdown('<div class="section-title"><div class="section-number">1</div>Dados do Cliente</div>', unsafe_allow_html=True)
+# Seção 1: Pessoa que recebeu o pagamento
+st.markdown('<div class="section-title"><div class="section-number">1</div>Pessoa que Recebeu o Pagamento</div>', unsafe_allow_html=True)
+
+escolha_pessoa = st.selectbox(
+    'Selecione a pessoa',
+    options=['Maria Verônica Gomes Pereira', 'Juscimara Gomes Avelino'],
+    label_visibility='collapsed'
+)
+
+# Obter informações da pessoa selecionada
+pessoa_info = get_pessoa_info(escolha_pessoa)
+
+# Exibir informações da pessoa selecionada
+col1, col2 = st.columns(2, gap="medium")
+with col1:
+    st.text_input('Nome', value=pessoa_info['nome'], disabled=True)
+with col2:
+    st.text_input('CPF', value=pessoa_info['cpf'], disabled=True)
+
+# Seção 2: Nome do Cliente
+st.markdown('<div class="section-title"><div class="section-number">2</div>Dados do Cliente</div>', unsafe_allow_html=True)
 nome_cliente = st.text_input(
     'Nome do Cliente',
     placeholder='Digite o nome completo do cliente',
     label_visibility='collapsed'
 )
 
-# Seção 2: Tipo de Item
-st.markdown('<div class="section-title"><div class="section-number">2</div>Tipo de Item</div>', unsafe_allow_html=True)
+# Seção 3: Tipo de Item
+st.markdown('<div class="section-title"><div class="section-number">3</div>Tipo de Item</div>', unsafe_allow_html=True)
 tipo_item = st.radio(
     'Selecione uma opção',
     options=['Itens', 'Salgados', 'Misto'],
@@ -308,8 +349,8 @@ tipo_item = st.radio(
     label_visibility='collapsed'
 )
 
-# Seção 3: Quantidade ou Itens Mistos
-st.markdown('<div class="section-title"><div class="section-number">3</div>Detalhes da Entrega (quantidade)</div>', unsafe_allow_html=True)
+# Seção 4: Quantidade ou Itens Mistos
+st.markdown('<div class="section-title"><div class="section-number">4</div>Detalhes da Entrega (quantidade)</div>', unsafe_allow_html=True)
 
 if tipo_item != "Misto":
     quantidade = st.number_input(
@@ -369,8 +410,8 @@ if tipo_item == "Misto":
         st.session_state.itens_misto_list.append({'tipo': '', 'quantidade': 0})
         st.rerun()
 
-# Seção 4: Valor e Data
-st.markdown('<div class="section-title"><div class="section-number">4</div>Valor (R$)</div>', unsafe_allow_html=True)
+# Seção 5: Valor e Data
+st.markdown('<div class="section-title"><div class="section-number">5</div>Valor (R$)</div>', unsafe_allow_html=True)
 
 col1, col2 = st.columns(2, gap="medium")
 
@@ -395,7 +436,8 @@ st.markdown('</div>', unsafe_allow_html=True)
 # Caminhos das imagens
 BASE_DIR = os.path.dirname(__file__)
 logo_path = os.path.join(BASE_DIR, "images", "logo.png")
-assinatura_path = os.path.join(BASE_DIR, "images", "assinatura.png")
+# Assinatura será determinada dinamicamente
+assinatura_path = os.path.join(BASE_DIR, "images", pessoa_info['assinatura'])
 
 # Botão Gerar PDF
 gerar_pdf = st.button('📋 Gerar PDF', use_container_width=True)
@@ -417,6 +459,10 @@ if gerar_pdf:
             st.error("⚠️ Adicione pelo menos um item ao recibo misto.")
             erro = True
 
+    if not os.path.exists(assinatura_path):
+        st.error(f"⚠️ Arquivo de assinatura não encontrado: {pessoa_info['assinatura']}")
+        erro = True
+
     if not erro:
         pdf_bytes = generate_pdf(
             nome_cliente,
@@ -426,6 +472,8 @@ if gerar_pdf:
             tipo_item,
             logo_path,
             assinatura_path,
+            pessoa_info['nome'],
+            pessoa_info['cpf'],
             itens_misto=itens_misto
         )
 
